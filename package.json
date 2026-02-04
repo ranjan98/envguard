@@ -1,0 +1,40 @@
+{
+  "name": "envguard",
+  "version": "1.0.0",
+  "description": "A comprehensive CLI tool for validating .env files, detecting exposed secrets, and managing environment configurations",
+  "main": "dist/cli.js",
+  "bin": {
+    "envguard": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "env",
+    "environment",
+    "dotenv",
+    "validation",
+    "security",
+    "secrets",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "simple-git": "^3.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
