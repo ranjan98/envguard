@@ -5,6 +5,8 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { validateEnvFile, checkForSecrets, generateEnvExample, scanGitHistory } from './utils';
+import { autoFixEnvFile, displayFixes } from './auto-fix';
+import { diffEnvFiles, displayDiff, generateMissingVars } from './diff';
 
 const program = new Command();
 
@@ -115,6 +117,53 @@ program
           console.log(chalk.gray(`  ${finding.line}\n`));
         });
         console.log(chalk.yellow('  ⚠️  These secrets may be compromised. Rotate them immediately!'));
+      }
+    } catch (error: any) {
+      console.error(chalk.red('\nError:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('auto-fix [envFile]')
+  .description('Automatically fix common issues in .env file')
+  .action(async (envFile = '.env') => {
+    try {
+      console.log(chalk.blue.bold('\n🔧 EnvGuard - Auto-Fix\n'));
+
+      if (!fs.existsSync(envFile)) {
+        console.error(chalk.red(`Error: ${envFile} not found`));
+        process.exit(1);
+      }
+
+      const fixes = autoFixEnvFile(envFile);
+      displayFixes(fixes);
+
+      if (fixes.length > 0) {
+        console.log(chalk.green(`\n✓ Fixed ${envFile}`));
+      }
+    } catch (error: any) {
+      console.error(chalk.red('\nError:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('diff [envFile] [exampleFile]')
+  .description('Compare .env file with .env.example')
+  .option('-g, --generate-missing', 'Generate file with missing variables')
+  .action(async (envFile = '.env', exampleFile = '.env.example', options) => {
+    try {
+      if (!fs.existsSync(envFile) && !fs.existsSync(exampleFile)) {
+        console.error(chalk.red('Error: Neither .env nor .env.example found'));
+        process.exit(1);
+      }
+
+      const diff = diffEnvFiles(envFile, exampleFile);
+      displayDiff(diff, envFile, exampleFile);
+
+      if (options.generateMissing) {
+        generateMissingVars(diff, '.env.missing');
       }
     } catch (error: any) {
       console.error(chalk.red('\nError:'), error.message);
