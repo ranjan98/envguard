@@ -29,7 +29,7 @@ npm install -g envguard
 Or run locally:
 
 ```bash
-git clone https://github.com/yourusername/envguard.git
+git clone https://github.com/ranjan98/envguard.git
 cd envguard
 npm install
 npm run build
@@ -309,7 +309,7 @@ EnvGuard detects these secret patterns:
 Found a bug? Want to add more secret patterns?
 
 ```bash
-git clone https://github.com/yourusername/envguard.git
+git clone https://github.com/ranjan98/envguard.git
 cd envguard
 npm install
 npm run dev validate
