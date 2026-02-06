@@ -29,41 +29,17 @@ export function autoFixEnvFile(envFilePath: string): Fix[] {
       return line;
     }
 
-    const [key, ...valueParts] = line.split('=');
-    const value = valueParts.join('=');
+    // Normalize: trim spaces around key and value first
+    const [rawKey, ...valueParts] = line.split('=');
+    const rawValue = valueParts.join('=');
+    let currentKey = rawKey;
+    let currentValue = rawValue;
 
-    // Fix 1: Remove trailing comments from values
-    if (value.includes('#') && !value.trim().startsWith('"') && !value.trim().startsWith("'")) {
-      const cleanValue = value.split('#')[0].trim();
-      fixedLine = `${key}=${cleanValue}`;
-      if (fixedLine !== line) {
-        fixes.push({
-          line: lineNum,
-          original: line,
-          fixed: fixedLine,
-          reason: 'Removed inline comment from value',
-        });
-        hasChanged = true;
-      }
-    }
-
-    // Fix 2: Add quotes to values with spaces (if not already quoted)
-    if (!hasChanged && value.includes(' ') &&
-        !value.trim().startsWith('"') &&
-        !value.trim().startsWith("'")) {
-      fixedLine = `${key}="${value.trim()}"`;
-      fixes.push({
-        line: lineNum,
-        original: line,
-        fixed: fixedLine,
-        reason: 'Added quotes around value with spaces',
-      });
-      hasChanged = true;
-    }
-
-    // Fix 3: Remove extra spaces around equals sign
-    if (!hasChanged && (key.includes(' ') || value.startsWith(' '))) {
-      fixedLine = `${key.trim()}=${value.trimStart()}`;
+    // Fix 1: Remove extra spaces around equals sign
+    if (currentKey !== currentKey.trim() || currentValue !== currentValue.trimStart()) {
+      currentKey = currentKey.trim();
+      currentValue = currentValue.trimStart();
+      fixedLine = `${currentKey}=${currentValue}`;
       if (fixedLine !== line) {
         fixes.push({
           line: lineNum,
@@ -75,19 +51,55 @@ export function autoFixEnvFile(envFilePath: string): Fix[] {
       }
     }
 
-    // Fix 4: Remove quotes from numeric values
-    if (!hasChanged &&
-        (value.trim().startsWith('"') || value.trim().startsWith("'"))) {
-      const unquoted = value.trim().slice(1, -1);
-      if (/^\d+$/.test(unquoted) && !unquoted.startsWith('0')) {
-        fixedLine = `${key}=${unquoted}`;
+    // Fix 2: Remove trailing comments from values
+    if (currentValue.includes('#') && !currentValue.trim().startsWith('"') && !currentValue.trim().startsWith("'")) {
+      const cleanValue = currentValue.split('#')[0].trim();
+      const newLine = `${currentKey}=${cleanValue}`;
+      if (newLine !== fixedLine) {
+        currentValue = cleanValue;
+        fixedLine = newLine;
         fixes.push({
           line: lineNum,
           original: line,
           fixed: fixedLine,
-          reason: 'Removed unnecessary quotes from numeric value',
+          reason: 'Removed inline comment from value',
         });
         hasChanged = true;
+      }
+    }
+
+    // Fix 3: Add quotes to values with spaces (if not already quoted)
+    if (currentValue.includes(' ') &&
+        !currentValue.trim().startsWith('"') &&
+        !currentValue.trim().startsWith("'")) {
+      const newLine = `${currentKey}="${currentValue.trim()}"`;
+      if (newLine !== fixedLine) {
+        fixedLine = newLine;
+        fixes.push({
+          line: lineNum,
+          original: line,
+          fixed: fixedLine,
+          reason: 'Added quotes around value with spaces',
+        });
+        hasChanged = true;
+      }
+    }
+
+    // Fix 4: Remove quotes from numeric values
+    if (currentValue.trim().startsWith('"') || currentValue.trim().startsWith("'")) {
+      const unquoted = currentValue.trim().slice(1, -1);
+      if (/^\d+$/.test(unquoted) && !unquoted.startsWith('0')) {
+        const newLine = `${currentKey}=${unquoted}`;
+        if (newLine !== fixedLine) {
+          fixedLine = newLine;
+          fixes.push({
+            line: lineNum,
+            original: line,
+            fixed: fixedLine,
+            reason: 'Removed unnecessary quotes from numeric value',
+          });
+          hasChanged = true;
+        }
       }
     }
 
